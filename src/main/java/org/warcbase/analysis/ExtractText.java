@@ -30,6 +30,8 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 
+import com.esotericsoftware.minlog.Log;
+
 public class ExtractText {
   private static final Logger LOG = Logger.getLogger(ExtractText.class);
   private static final String NAME_OPTION = "name";
@@ -114,8 +116,8 @@ public class ExtractText {
       boolean ambiguous = false;
       for (Map.Entry<String, String> entry : idUri.entrySet()) {
         if (keyStr.startsWith(entry.getKey())) {
-          if (!id.equals("")) {
-            System.out.println(id + " " + entry.getValue());
+          if (!id.equals("") && !id.equals(entry.getValue())) {
+            Log.warn(id + " " + entry.getValue());
             ambiguous = true;
           }
           id = entry.getValue();
