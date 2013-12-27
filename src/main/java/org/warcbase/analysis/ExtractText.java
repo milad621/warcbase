@@ -5,10 +5,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -17,6 +18,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
@@ -27,13 +29,6 @@ import org.apache.hadoop.hbase.filter.FirstKeyOnlyFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
-import org.warcbase.data.Util;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.codec.digest.DigestUtils;
-
-import tl.lin.data.fd.Object2IntFrequencyDistribution;
-import tl.lin.data.fd.Object2IntFrequencyDistributionEntry;
 
 public class ExtractText {
   private static final Logger LOG = Logger.getLogger(ExtractText.class);
@@ -42,12 +37,19 @@ public class ExtractText {
 
   @SuppressWarnings("static-access")
   public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+    /*
+     * Map<String, String> map = new HashMap<String,String>(); map.put("A", "B"); for
+     * (Map.Entry<String, String> entry : map.entrySet()){ System.out.println(entry.getKey() + "/" +
+     * entry.getValue()); }
+     */
+
+    // if (true) return;
     Options options = new Options();
     options.addOption(OptionBuilder.withArgName("name").hasArg()
         .withDescription("name of the archive").create(NAME_OPTION));
     options.addOption(OptionBuilder.withArgName("dir").hasArg()
         .withDescription("WARC files location").create(DIR_OPTION));
-    
+
     CommandLine cmdline = null;
     CommandLineParser parser = new GnuParser();
     try {
@@ -64,29 +66,37 @@ public class ExtractText {
     }
     String name = cmdline.getOptionValue(NAME_OPTION);
     String path = cmdline.getOptionValue(DIR_OPTION);
-    
-    List<String> originalIds = new ArrayList<String>(100);
-    List<String> ids = new ArrayList<String>(100);
-    BufferedReader reader = new BufferedReader(new FileReader("ids.txt"));
-    String line = null;
-    while ((line = reader.readLine()) != null) {
-      originalIds.add(line);
+
+    Map<String, String> idUri = new HashMap<String, String>();
+    String csvFile = "id_url_2.csv";
+    String line = "";
+    BufferedReader br = new BufferedReader(new FileReader(csvFile));
+    while ((line = br.readLine()) != null) {
+      String[] splits = line.split(",");
+      for (int i = 1; i < splits.length; i++) {
+        String uri = splits[i];
+        while (uri.startsWith(" ")) {
+          uri = uri.substring(1);
+        }
+        idUri.put(uri, splits[0]);
+      }
     }
-    reader.close();
-    
-    for (String s : originalIds) {
-      if (!ids.contains(s) && !s.equals("go")) {
-        ids.add(s);
+    br.close();
+
+    List<String> ids = new ArrayList<String>(100);
+    for (Map.Entry<String, String> entry : idUri.entrySet()) {
+      if (!ids.contains(entry.getValue())) {
+        ids.add(entry.getValue());
       }
     }
 
-    for(int i=0;i<ids.size();i++){
+    for (int i = 0; i < ids.size(); i++) {
       File folder = new File(path + ids.get(i));
-      if(!folder.exists()){
+      if (!folder.exists()) {
         folder.mkdirs();
       }
     }
-    
+
     HTablePool pool = new HTablePool();
     HTableInterface table = pool.getTable(name);
     Scan scan = new Scan();
@@ -98,67 +108,52 @@ public class ExtractText {
     String content = "";
     for (Result rr = scanner.next(); rr != null; rr = scanner.next()) {
       byte[] key = rr.getRow();
-      
+
       String id = "";
       String keyStr = Bytes.toString(key);
-      String uri = Util.reverseBacUri(keyStr);
       boolean ambiguous = false;
-      for(int i=0;i<ids.size();i++){
-        if(keyStr.contains(ids.get(i))){
-          if(!id.equals("")){
-            System.out.println(id + " " + ids.get(i));
+      for (Map.Entry<String, String> entry : idUri.entrySet()) {
+        if (keyStr.startsWith(entry.getKey())) {
+          if (!id.equals("")) {
+            System.out.println(id + " " + entry.getValue());
             ambiguous = true;
           }
-          id = ids.get(i);
+          id = entry.getValue();
         }
       }
-      
-      if(id.equals("") || ambiguous){
+
+      if (id.equals("") || ambiguous) {
         continue;
       }
-      
-      //String domain = Bytes.toString(key);
-      //domain = Util.getDomain(domain);
-      //domain = Util.reverseBacHostnamek(domain);
-      //String filePath = path + domain;
+
       String filePath = path + id;
-      //File folder = new File(filePath);
-      /*if(!folder.exists()){
-        folder.mkdirs();
-        //folder.createNewFile();
-      }*/
-      
+
       Get get = new Get(key);
       Result rs = table.get(get);
-        
-      for (int i=0;i<rs.raw().length;i++){
-        if((new String(rs.raw()[i].getFamily(), "UTF8").equals("type"))){
+
+      for (int i = 0; i < rs.raw().length; i++) {
+        if ((new String(rs.raw()[i].getFamily(), "UTF8").equals("type"))) {
           type = Bytes.toString(rs.raw()[i].getValue());
         }
-      
+
       }
-      if (!(type.contains("html"))){
+      if (!(type.contains("html"))) {
         continue;
       }
-      for (int i=0;i<rs.raw().length;i++){
-        if (!(new String(rs.raw()[i].getFamily(), "UTF8").equals("content"))){
+      for (int i = 0; i < rs.raw().length; i++) {
+        if (!(new String(rs.raw()[i].getFamily(), "UTF8").equals("content"))) {
           continue;
         }
         content = Bytes.toString(rs.raw()[i].getValue());
-        //System.out.println(content);
         String cleaned = Jsoup.parse(content).text().replaceAll("[\\r\\n]+", " ");
-        //System.out.println(cleaned);
-        //return;
-        //FileWriter out = new FileWriter(filePath + "/" + Base64.encodeBase64URLSafeString(rs.raw()[i].getQualifier()) + Base64.encodeBase64URLSafeString(key) + ".txt", true);
-        MessageDigest md = MessageDigest.getInstance("SHA-1");
-        //String password = new String(Hex.encodeHex(md.digest()),
-          //  CharSet.forName("UTF-8"));
-        FileWriter out = new FileWriter(filePath + "/" + Bytes.toString(rs.raw()[i].getQualifier()) + DigestUtils.sha1Hex(key) + ".txt", true);
+        FileWriter out = new FileWriter(filePath + "/" + Bytes.toString(rs.raw()[i].getQualifier())
+            + DigestUtils.sha1Hex(key) + ".txt", true);
         out.write(cleaned);
         out.close();
       }
     }
-    
+
     pool.close();
   }
+
 }
