@@ -28,9 +28,13 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.FirstKeyOnlyFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
+import org.apache.lucene.util.Version;
 import org.jsoup.Jsoup;
 
-import com.esotericsoftware.minlog.Log;
+import com.google.common.base.Joiner;
+
+//import com.esotericsoftware.minlog.Log;
 
 public class ExtractText {
   private static final Logger LOG = Logger.getLogger(ExtractText.class);
@@ -63,7 +67,7 @@ public class ExtractText {
 
     if (!cmdline.hasOption(DIR_OPTION) || !cmdline.hasOption(NAME_OPTION)) {
       HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp(CountRowTypes.class.getCanonicalName(), options);
+      formatter.printHelp(ExtractText.class.getCanonicalName(), options);
       System.exit(-1);
     }
     String name = cmdline.getOptionValue(NAME_OPTION);
@@ -98,6 +102,15 @@ public class ExtractText {
         folder.mkdirs();
       }
     }
+    
+    //Creating stop_words list
+    ArrayList<String> stop_words = new ArrayList<String>();
+    BufferedReader reader = new BufferedReader(new FileReader("stop_words.txt"));
+    line = null;
+    while ((line = reader.readLine()) != null) {
+      stop_words.add(line);
+    }
+    reader.close();
 
     HTablePool pool = new HTablePool();
     HTableInterface table = pool.getTable(name);
@@ -116,8 +129,8 @@ public class ExtractText {
       boolean ambiguous = false;
       for (Map.Entry<String, String> entry : idUri.entrySet()) {
         if (keyStr.startsWith(entry.getKey())) {
-          if (!id.equals("") && !id.equals(entry.getValue())) {
-            Log.warn(id + " " + entry.getValue());
+          if (!id.equals("") && id.equals(entry.getValue())) {
+            LOG.warn(id + " " + entry.getValue());
             ambiguous = true;
           }
           id = entry.getValue();
@@ -148,9 +161,12 @@ public class ExtractText {
         }
         content = Bytes.toString(rs.raw()[i].getValue());
         String cleaned = Jsoup.parse(content).text().replaceAll("[\\r\\n]+", " ");
+        List<String> words = AnalyzerUtils.parse(new SimpleAnalyzer(Version.LUCENE_43), cleaned);
+        words.removeAll(stop_words);
+        String text = Joiner.on(" ").join(words);
         FileWriter out = new FileWriter(filePath + "/" + Bytes.toString(rs.raw()[i].getQualifier())
             + DigestUtils.sha1Hex(key) + ".txt", true);
-        out.write(cleaned);
+        out.write(text);
         out.close();
       }
     }
