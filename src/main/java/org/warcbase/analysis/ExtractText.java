@@ -102,8 +102,8 @@ public class ExtractText {
         folder.mkdirs();
       }
     }
-    
-    //Creating stop_words list
+
+    // Creating stop_words list
     ArrayList<String> stop_words = new ArrayList<String>();
     BufferedReader reader = new BufferedReader(new FileReader("stop_words.txt"));
     line = null;
