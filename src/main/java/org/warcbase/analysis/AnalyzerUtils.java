@@ -8,6 +8,8 @@ import java.util.List;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
+import org.apache.lucene.analysis.en.KStemFilter;
+import org.apache.lucene.analysis.en.KStemmer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.util.Version;
 
@@ -21,7 +23,8 @@ public class AnalyzerUtils {
     TokenStream tokenStream = analyzer.tokenStream(null, new StringReader(keywords));
     CharTermAttribute cattr = tokenStream.addAttribute(CharTermAttribute.class);
     tokenStream.reset();
-    while (tokenStream.incrementToken()) {
+    org.apache.lucene.analysis.en.KStemFilter kstem = new KStemFilter(tokenStream);
+    while (kstem.incrementToken()) {
       if (cattr.toString().length() == 0) {
         continue;
       }
