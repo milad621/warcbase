@@ -74,7 +74,7 @@ public class ExtractText {
     String path = cmdline.getOptionValue(DIR_OPTION);
 
     Map<String, String> idUri = new HashMap<String, String>();
-    String csvFile = "id_url_2.csv";
+    String csvFile = "senate_id_url.csv";//"id_url_2.csv";
     String line = "";
     BufferedReader br = new BufferedReader(new FileReader(csvFile));
     while ((line = br.readLine()) != null) {
@@ -96,12 +96,13 @@ public class ExtractText {
       }
     }
 
-    for (int i = 0; i < ids.size(); i++) {
+    //creating dirctroies for each ID
+    /*for (int i = 0; i < ids.size(); i++) {
       File folder = new File(path + ids.get(i));
       if (!folder.exists()) {
         folder.mkdirs();
       }
-    }
+    }*/
 
     // Creating stop_words list
     ArrayList<String> stop_words = new ArrayList<String>();
@@ -121,6 +122,7 @@ public class ExtractText {
 
     String type = "";
     String content = "";
+    //System.out.println(idUri.size());
     for (Result rr = scanner.next(); rr != null; rr = scanner.next()) {
       byte[] key = rr.getRow();
 
@@ -129,19 +131,19 @@ public class ExtractText {
       boolean ambiguous = false;
       for (Map.Entry<String, String> entry : idUri.entrySet()) {
         if (keyStr.startsWith(entry.getKey())) {
-          if (!id.equals("") && id.equals(entry.getValue())) {
+          if (!id.equals("") && !id.equals(entry.getValue())) {
             LOG.warn(id + " " + entry.getValue());
             ambiguous = true;
           }
           id = entry.getValue();
         }
       }
-
+      //System.out.println(id + " " + ambiguous);
       if (id.equals("") || ambiguous) {
         continue;
       }
 
-      String filePath = path + id;
+      String filePath = path;// + id;
 
       Get get = new Get(key);
       Result rs = table.get(get);
@@ -164,8 +166,11 @@ public class ExtractText {
         List<String> words = AnalyzerUtils.parse(new SimpleAnalyzer(Version.LUCENE_43), cleaned);
         words.removeAll(stop_words);
         String text = Joiner.on(" ").join(words);
-        FileWriter out = new FileWriter(filePath + "/" + Bytes.toString(rs.raw()[i].getQualifier())
-            + DigestUtils.sha1Hex(key) + ".txt", true);
+        if(text.length() < 300)
+           continue;
+        filePath = filePath + "/" + id + "#" + Bytes.toString(rs.raw()[i].getQualifier())
+            + DigestUtils.sha1Hex(key)+ ".txt";
+        FileWriter out = new FileWriter(filePath, true);
         out.write(text);
         out.close();
       }
