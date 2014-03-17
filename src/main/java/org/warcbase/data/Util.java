@@ -90,6 +90,11 @@ public class Util {
     domain = Util.reverseBacHostnamek(domain);
     System.out.println(domain);
     System.out.println(Util.reverseBacUri(reverse));
+    
+    String[] splits = reverse.split("\\/");
+    System.out.println(reverse);
+    System.out.println(splits.length);
+        
   }
 
   public static String getUriExtension(String thisTargetURI) {
