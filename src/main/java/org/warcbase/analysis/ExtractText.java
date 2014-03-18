@@ -32,12 +32,14 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.util.Version;
 import org.jsoup.Jsoup;
-import org.warcbase.analysis.NER.NEFinder;
+import org.warcbase.analysis.NER.*;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-
-//import com.esotericsoftware.minlog.Log;
+import tl.lin.data.SortableEntries.Order;
+import tl.lin.data.fd.Object2IntFrequencyDistribution;
+import tl.lin.data.fd.Object2IntFrequencyDistributionEntry;
+import tl.lin.data.pair.PairOfObjectInt;
 
 public class ExtractText {
   private static final Logger LOG = Logger.getLogger(ExtractText.class);
@@ -102,6 +104,17 @@ public class ExtractText {
 
     //creating dirctroies for each ID
     /*for (int i = 0; i < ids.size(); i++) {
+=======
+    reader.close();
+
+    for (String s : originalIds) {
+      if (!ids.contains(s) && !s.equals("go")) {
+        ids.add(s);
+      }
+    }
+
+    /*for(int i=0;i<ids.size();i++){
+>>>>>>> forkOrigin/master
       File folder = new File(path + ids.get(i));
       if (!folder.exists()) {
         folder.mkdirs();
@@ -117,6 +130,7 @@ public class ExtractText {
     }
     reader.close();
 
+
     HTablePool pool = new HTablePool();
     HTableInterface table = pool.getTable(name);
     Scan scan = new Scan();
@@ -131,6 +145,7 @@ public class ExtractText {
       byte[] key = rr.getRow();
 
       String id = "";
+      int idInd = 0;
       String keyStr = Bytes.toString(key);
       boolean ambiguous = false;
       for (Map.Entry<String, String> entry : idUri.entrySet()) {
@@ -222,6 +237,7 @@ public class ExtractText {
     }
 
     pool.close();
+
   }
 
 }

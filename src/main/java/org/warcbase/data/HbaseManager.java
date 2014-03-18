@@ -69,6 +69,9 @@ public class HbaseManager {
       java.util.Date parsedDate = dateFormat.parse(date);
       Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
       Put put = new Put(Bytes.toBytes(key));
+//=======
+      put.setWriteToWAL(false);
+//>>>>>>> forkOrigin/master
       put.add(Bytes.toBytes(FAMILIES[0]), Bytes.toBytes(type), timestamp.getTime(), data);
       //put.add(Bytes.toBytes(FAMILIES[1]), Bytes.toBytes(date), Bytes.toBytes(type));
       table.put(put);
@@ -81,7 +84,7 @@ public class HbaseManager {
       return false;
     }
   }
-  
+
   public static void main(String[] args) throws ParseException {
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddhhmmss");
     java.util.Date parsedDate = dateFormat.parse("20040124034300");
@@ -89,3 +92,4 @@ public class HbaseManager {
     System.out.println(timestamp.getTime());
   }
 }
+
