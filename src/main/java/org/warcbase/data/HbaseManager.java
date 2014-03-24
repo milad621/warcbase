@@ -10,9 +10,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.HTableInterface;
+import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 import org.warcbase.ingest.IngestFiles;
@@ -25,6 +29,7 @@ public class HbaseManager {
 
   private final HTable table;
   private final HBaseAdmin admin;
+  private static HTablePool pool = new HTablePool();
 
   public HbaseManager(String name, boolean create) throws Exception {
     Configuration hbaseConfig = HBaseConfiguration.create();
@@ -68,11 +73,25 @@ public class HbaseManager {
       SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddhhmmss");
       java.util.Date parsedDate = dateFormat.parse(date);
       Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
+      HTableInterface hTableInterface = pool.getTable("test-3-23");
+      Get get = new Get(Bytes.toBytes(key));
+      Result rs = hTableInterface.get(get);
+      if (key.equals("gov.house.www/")){
+        System.out.println("=========================================");
+        //System.out.println(date + " " + timestamp + " " + timestamp.getTime());
+        
+        System.out.println(rs.raw().length);
+        if (rs.raw().length == 1)
+          System.out.println(rs.raw()[0].getTimestamp());
+        //if (rs.raw().length > 0 && timestamp.getTime() < rs.raw()[0].getTimestamp()) {
+          //timestamp = new Timestamp(rs.raw()[0].getTimestamp() + 1);
+        //}
+        //System.out.println(table.getConfiguration().);
+        System.out.println();
+      }
       Put put = new Put(Bytes.toBytes(key));
-//=======
-      put.setWriteToWAL(false);
-//>>>>>>> forkOrigin/master
-      put.add(Bytes.toBytes(FAMILIES[0]), Bytes.toBytes(type), timestamp.getTime(), data);
+      //put.setWriteToWAL(false);
+      put.add(Bytes.toBytes(FAMILIES[0]), Bytes.toBytes(type + " " + timestamp.getTime()), timestamp.getTime(), data);
       //put.add(Bytes.toBytes(FAMILIES[1]), Bytes.toBytes(date), Bytes.toBytes(type));
       table.put(put);
       return true;

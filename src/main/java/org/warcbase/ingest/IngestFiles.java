@@ -15,6 +15,7 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jwat.arc.ArcReader;
 import org.jwat.arc.ArcReaderFactory;
@@ -222,6 +223,7 @@ public class IngestFiles {
 
   @SuppressWarnings("static-access")
   public static void main(String[] args) throws Exception {
+    LOG.setLevel(Level.OFF);
     Options options = new Options();
     options.addOption(OptionBuilder.withArgName("name").hasArg()
         .withDescription("name of the archive").create(NAME_OPTION));
