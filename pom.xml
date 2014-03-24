@@ -112,6 +112,10 @@
               <name>UriMappingBuilder</name>
             </program>
             <program>
+              <mainClass>org.warcbase.data.HbaseManager</mainClass>
+              <name>HbaseManager</name>
+            </program>
+            <program>
               <mainClass>org.warcbase.data.ExtractLinks</mainClass>
               <name>ExtractLinks</name>
             </program>

@@ -1,5 +1,6 @@
 package org.warcbase.data;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -10,6 +11,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.MasterNotRunningException;
+import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
@@ -90,8 +93,9 @@ public class HbaseManager {
         System.out.println();
       }
       Put put = new Put(Bytes.toBytes(key));
-      //put.setWriteToWAL(false);
-      put.add(Bytes.toBytes(FAMILIES[0]), Bytes.toBytes(type + " " + timestamp.getTime()), timestamp.getTime(), data);
+      put.setWriteToWAL(false);
+      //put.add(Bytes.toBytes(FAMILIES[0]), Bytes.toBytes(type), timestamp.getTime(), data);
+      put.add(Bytes.toBytes(FAMILIES[0]), Bytes.toBytes(type), timestamp.getTime(), Bytes.toBytes(timestamp.getTime()));
       //put.add(Bytes.toBytes(FAMILIES[1]), Bytes.toBytes(date), Bytes.toBytes(type));
       table.put(put);
       return true;
@@ -104,11 +108,49 @@ public class HbaseManager {
     }
   }
 
-  public static void main(String[] args) throws ParseException {
-    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddhhmmss");
+  public static void main(String[] args) throws ParseException, IOException, SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    /*SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddhhmmss");
     java.util.Date parsedDate = dateFormat.parse("20040124034300");
     Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
-    System.out.println(timestamp.getTime());
+    System.out.println(timestamp.getTime());*/
+    String name = "test-3-24";
+    Configuration hbaseConfig = HBaseConfiguration.create();
+    HBaseAdmin admin = new HBaseAdmin(hbaseConfig);
+    if (admin.tableExists(name)) {
+      admin.disableTable(name);
+      admin.deleteTable(name);
+    }
+    HTableDescriptor tableDesc = new HTableDescriptor(name);
+    String family = "c";
+    HColumnDescriptor hColumnDesc = new HColumnDescriptor(family);
+    hColumnDesc.setMaxVersions(2);
+    tableDesc.addFamily(hColumnDesc);
+    admin.createTable(tableDesc);
+    HTable table = new HTable(hbaseConfig, name);
+    Field maxKeyValueSizeField = HTable.class.getDeclaredField("maxKeyValueSize");
+    maxKeyValueSizeField.setAccessible(true);
+    maxKeyValueSizeField.set(table, MAX_KEY_VALUE_SIZE);
+    admin.close();
+    Put put = new Put(Bytes.toBytes("key"));
+    put.setWriteToWAL(false);
+    //put.
+    put.add(Bytes.toBytes(family), Bytes.toBytes("q0"), 0, Bytes.toBytes("v0"));
+    table.put(put);
+    put = new Put(Bytes.toBytes("key"));
+    put.add(Bytes.toBytes(family), Bytes.toBytes("q0"), 1, Bytes.toBytes("v1"));
+    table.put(put);
+    put = new Put(Bytes.toBytes("key"));
+    put.add(Bytes.toBytes(family), Bytes.toBytes("q0"), 2, Bytes.toBytes("v2"));
+    table.put(put);
+    put = new Put(Bytes.toBytes("key"));
+    put.add(Bytes.toBytes(family), Bytes.toBytes("q0"), 3, Bytes.toBytes("v3"));
+    table.put(put);
+    
+    
+    HTableInterface hTableInterface = pool.getTable(name);
+    Get get = new Get(Bytes.toBytes("key"));
+    Result rs = hTableInterface.get(get);
+    System.out.println(rs.raw().length);
   }
 }
 
