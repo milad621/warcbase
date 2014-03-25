@@ -6,6 +6,8 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -123,7 +125,11 @@ public class HbaseManager {
     HTableDescriptor tableDesc = new HTableDescriptor(name);
     String family = "c";
     HColumnDescriptor hColumnDesc = new HColumnDescriptor(family);
-    hColumnDesc.setMaxVersions(2);
+    hColumnDesc.setMaxVersions(4);
+    hColumnDesc.setTimeToLive(Integer.MAX_VALUE);
+    System.out.println(hColumnDesc.DEFAULT_TTL);
+    System.out.println(hColumnDesc.getTimeToLive());
+    hColumnDesc.setTimeToLive(2147483647);
     tableDesc.addFamily(hColumnDesc);
     admin.createTable(tableDesc);
     HTable table = new HTable(hbaseConfig, name);
@@ -133,24 +139,39 @@ public class HbaseManager {
     admin.close();
     Put put = new Put(Bytes.toBytes("key"));
     put.setWriteToWAL(false);
-    //put.
     put.add(Bytes.toBytes(family), Bytes.toBytes("q0"), 0, Bytes.toBytes("v0"));
-    table.put(put);
-    put = new Put(Bytes.toBytes("key"));
     put.add(Bytes.toBytes(family), Bytes.toBytes("q0"), 1, Bytes.toBytes("v1"));
-    table.put(put);
-    put = new Put(Bytes.toBytes("key"));
     put.add(Bytes.toBytes(family), Bytes.toBytes("q0"), 2, Bytes.toBytes("v2"));
-    table.put(put);
-    put = new Put(Bytes.toBytes("key"));
     put.add(Bytes.toBytes(family), Bytes.toBytes("q0"), 3, Bytes.toBytes("v3"));
     table.put(put);
     
     
     HTableInterface hTableInterface = pool.getTable(name);
     Get get = new Get(Bytes.toBytes("key"));
+    get.setMaxVersions(4);
     Result rs = hTableInterface.get(get);
     System.out.println(rs.raw().length);
+    /*Configuration conf = HBaseConfiguration.create();
+
+    HBaseHelper helper = HBaseHelper.getHelper(conf);
+    helper.dropTable("testtable");
+    helper.createTable("testtable", "colfam1");
+    HTable table = new HTable(conf, "testtable");
+
+    // vv PutIdenticalExample
+    Put put = new Put(Bytes.toBytes("row1"));
+    put.add(Bytes.toBytes("colfam1"), Bytes.toBytes("qual1"),
+      Bytes.toBytes("val2"));
+    put.add(Bytes.toBytes("colfam1"), Bytes.toBytes("qual1"),
+      Bytes.toBytes("val1")); // co PutIdenticalExample-1-Add Add the same column with a different value. The last value is going to be used.
+    table.put(put);
+
+    Get get = new Get(Bytes.toBytes("row1"));
+    get.setMaxVersions(3);
+    Result result = table.get(get);
+    System.out.println("Result: " + result + ", Value: " + Bytes.toString(
+      result.getValue(Bytes.toBytes("colfam1"), Bytes.toBytes("qual1")))); // co PutIdenticalExample-2-Get Perform a get to verify that "val1" was actually stored.
+    System.out.println(result.raw().length);*/
   }
 }
 
