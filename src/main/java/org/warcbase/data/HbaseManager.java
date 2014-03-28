@@ -2,7 +2,6 @@ package org.warcbase.data;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -12,6 +11,7 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
@@ -21,7 +21,7 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.io.hfile.Compression.Algorithm;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 import org.warcbase.ingest.IngestFiles;
@@ -30,7 +30,7 @@ public class HbaseManager {
   private static final String[] FAMILIES = { "c"};
   private static final Logger LOG = Logger.getLogger(HbaseManager.class);
   private static final int MAX_KEY_VALUE_SIZE = IngestFiles.MAX_CONTENT_SIZE + 200;
-  public static final int MAX_VERSIONS = 20;
+  public static final int MAX_VERSIONS = Integer.MAX_VALUE;
 
   private final HTable table;
   private final HBaseAdmin admin;
@@ -56,6 +56,9 @@ public class HbaseManager {
         //tableDesc.addFamily(new HColumnDescriptor(FAMILIES[i]));
         HColumnDescriptor hColumnDesc = new HColumnDescriptor(FAMILIES[i]);
         hColumnDesc.setMaxVersions(MAX_VERSIONS);
+        hColumnDesc.setCompressionType(Algorithm.SNAPPY);
+        hColumnDesc.setCompactionCompressionType(Algorithm.SNAPPY);
+        hColumnDesc.setTimeToLive(HConstants.FOREVER);
         tableDesc.addFamily(hColumnDesc);
       }
       admin.createTable(tableDesc);
@@ -78,27 +81,9 @@ public class HbaseManager {
       SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddhhmmss");
       java.util.Date parsedDate = dateFormat.parse(date);
       Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
-      HTableInterface hTableInterface = pool.getTable("test-3-23");
-      Get get = new Get(Bytes.toBytes(key));
-      Result rs = hTableInterface.get(get);
-      if (key.equals("gov.house.www/")){
-        System.out.println("=========================================");
-        //System.out.println(date + " " + timestamp + " " + timestamp.getTime());
-        
-        System.out.println(rs.raw().length);
-        if (rs.raw().length == 1)
-          System.out.println(rs.raw()[0].getTimestamp());
-        //if (rs.raw().length > 0 && timestamp.getTime() < rs.raw()[0].getTimestamp()) {
-          //timestamp = new Timestamp(rs.raw()[0].getTimestamp() + 1);
-        //}
-        //System.out.println(table.getConfiguration().);
-        System.out.println();
-      }
       Put put = new Put(Bytes.toBytes(key));
       put.setWriteToWAL(false);
-      //put.add(Bytes.toBytes(FAMILIES[0]), Bytes.toBytes(type), timestamp.getTime(), data);
-      put.add(Bytes.toBytes(FAMILIES[0]), Bytes.toBytes(type), timestamp.getTime(), Bytes.toBytes(timestamp.getTime()));
-      //put.add(Bytes.toBytes(FAMILIES[1]), Bytes.toBytes(date), Bytes.toBytes(type));
+      put.add(Bytes.toBytes(FAMILIES[0]), Bytes.toBytes(type), timestamp.getTime(), data);
       table.put(put);
       return true;
     } catch (Exception e) {
@@ -115,7 +100,7 @@ public class HbaseManager {
     java.util.Date parsedDate = dateFormat.parse("20040124034300");
     Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
     System.out.println(timestamp.getTime());*/
-    String name = "test-3-24";
+    /*String name = "test-3-24";
     Configuration hbaseConfig = HBaseConfiguration.create();
     HBaseAdmin admin = new HBaseAdmin(hbaseConfig);
     if (admin.tableExists(name)) {
@@ -150,7 +135,7 @@ public class HbaseManager {
     Get get = new Get(Bytes.toBytes("key"));
     get.setMaxVersions(4);
     Result rs = hTableInterface.get(get);
-    System.out.println(rs.raw().length);
+    System.out.println(rs.raw().length);*/
     /*Configuration conf = HBaseConfiguration.create();
 
     HBaseHelper helper = HBaseHelper.getHelper(conf);
