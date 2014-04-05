@@ -147,6 +147,10 @@
               <mainClass>org.warcbase.analysis.ExtractText</mainClass>
               <name>ExtractText</name>
             </program>
+            <program>
+              <mainClass>org.warcbase.analysis.ExtractUris</mainClass>
+              <name>ExtractUris</name>
+            </program>
           </programs>
         </configuration>
       </plugin>

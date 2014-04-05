@@ -33,9 +33,12 @@ import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.util.Version;
 import org.jsoup.Jsoup;
 import org.warcbase.analysis.NER.*;
+import org.warcbase.data.UriMapping;
+import org.warcbase.data.Util;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+
 import tl.lin.data.SortableEntries.Order;
 import tl.lin.data.fd.Object2IntFrequencyDistribution;
 import tl.lin.data.fd.Object2IntFrequencyDistributionEntry;
@@ -54,8 +57,11 @@ public class ExtractText {
      * (Map.Entry<String, String> entry : map.entrySet()){ System.out.println(entry.getKey() + "/" +
      * entry.getValue()); }
      */
-
-    // if (true) return;
+    /*UriMapping mapping = new UriMapping("senateUrls.fst");
+    System.out.println(mapping.getID("http://www.house.gov/"));
+    System.out.println(mapping.getUrl(23673580));
+    if (true) return;*/
+    UriMapping mapping = new UriMapping("senateUrls.fst");
     Options options = new Options();
     options.addOption(OptionBuilder.withArgName("name").hasArg()
         .withDescription("name of the archive").create(NAME_OPTION));
@@ -164,11 +170,15 @@ public class ExtractText {
        
       if (id.equals("frist") || id.equals("dole") || id.equals("specter")){
         String[] splits = keyStr.split("\\/");
-        if(splits.length > 3) {
+        if(splits.length > 3 || Math.random() > 0.4) {
           continue;
         }
           
       }
+      
+      String uri = Util.reverseBacUri(keyStr);
+      int mapId = mapping.getID(uri);
+      System.out.println(keyStr + " " + uri + " " + mapId);
         
       String filePath = path;// + id;
 
@@ -201,36 +211,12 @@ public class ExtractText {
         String text = Joiner.on(" ").join(words);
         if(text.length() < 300)
            continue;
-        filePath = filePath + "/" + id + "#" + rs.raw()[i].getTimestamp()
-            + DigestUtils.sha1Hex(key)+ ".txt";
+        String fileName = filePath + "/" + id + "#" + mapId + "#" + rs.raw()[i].getTimestamp()
+            + ".txt";
         if (text.contains("this page cannot be found sorry") || text.contains("this page can not be found sorry")) {
-          if (DigestUtils.sha1Hex(key).equals("464dc410d467043792b225612d730fa9")) {
-            System.out.println(keyStr);
-          }
-          if (DigestUtils.sha1Hex(key).equals("876c20659b1a4b8dc3e32868dat6e425")) {
-            System.out.println(keyStr);
-          }
-          if (DigestUtils.sha1Hex(key).equals("a428b5252dt8ea0454e1cb076cb54b0c52faf")) {
-            System.out.println(keyStr);
-          }
           continue;
         }
-        if (DigestUtils.sha1Hex(key).endsWith("e4aebcaf356f1ae6207ed84bf9c9")) {
-          System.out.println(keyStr);
-        }
-        if (DigestUtils.sha1Hex(key).endsWith("e3ba36fd30d8cd62c236ae5aab64bbda651")) {
-          System.out.println(keyStr);
-        }
-        if (DigestUtils.sha1Hex(key).endsWith("c6ad5b56d2a666329dc8de21f2786f80392c")) {
-          System.out.println(keyStr);
-        }
-        if (DigestUtils.sha1Hex(key).endsWith("d2910cfdc180278970d498769c309a968f")) {
-          System.out.println(keyStr);
-        }
-        if (DigestUtils.sha1Hex(key).endsWith("daafaeac51fdd9ff8d695cbef09416941110060")) {
-          System.out.println(keyStr);
-        }
-        FileWriter out = new FileWriter(filePath, true);
+        FileWriter out = new FileWriter(fileName, true);
         out.write(text);
         out.close();
       }
