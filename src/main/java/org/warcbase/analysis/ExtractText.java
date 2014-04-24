@@ -57,6 +57,12 @@ public class ExtractText {
      * (Map.Entry<String, String> entry : map.entrySet()){ System.out.println(entry.getKey() + "/" +
      * entry.getValue()); }
      */
+    /*System.out.println(Math.random());
+    System.out.println(Math.random());
+    System.out.println(Math.random());
+    System.out.println(Math.random());
+    System.out.println(Math.random());
+    if (true) return;*/
     /*UriMapping mapping = new UriMapping("senateUrls.fst");
     System.out.println(mapping.getID("http://www.house.gov/"));
     System.out.println(mapping.getUrl(23673580));
@@ -167,10 +173,38 @@ public class ExtractText {
       if (id.equals("") || ambiguous) {
         continue;
       }
-       
-      if (id.equals("frist") || id.equals("dole") || id.equals("specter")){
+      
+      if (id.equals("dole")) {
         String[] splits = keyStr.split("\\/");
-        if(splits.length > 3 || Math.random() > 0.4) {
+        if(splits.length > 3 || Math.random() < 0.3) {
+          continue;
+        }
+      }
+      
+      if (id.equals("frist")) {
+        String[] splits = keyStr.split("\\/");
+        if(splits.length > 3 || Math.random() < 0.25) {
+          continue;
+        }
+      }
+      
+      if (id.equals("harkin")) {
+        String[] splits = keyStr.split("\\/");
+        if(splits.length > 3 || Math.random() < 0.5) {
+          continue;
+        }
+      }
+      
+      if (id.equals("hatch")) {
+        String[] splits = keyStr.split("\\/");
+        if(splits.length > 3 || Math.random() < 0.45) {
+          continue;
+        }
+      }
+      
+      if (id.equals("specter")){
+        String[] splits = keyStr.split("\\/");
+        if(splits.length > 3 || Math.random() < 0.4) {
           continue;
         }
           
